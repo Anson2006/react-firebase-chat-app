@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { db } from '../firebase';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
-import { X, Hash, Info, Lock, Globe, Plus } from 'lucide-react';
+import { X, Hash, Info, Lock, Plus } from 'lucide-react';
 
 export default function RoomModal({ isOpen, onClose, onRoomCreatedMock }) {
   const { currentUser, firebaseActive } = useAuth();

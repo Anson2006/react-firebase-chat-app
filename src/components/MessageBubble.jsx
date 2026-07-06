@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { db } from '../firebase';
 import { doc, updateDoc, deleteDoc } from 'firebase/firestore';
-import { Trash2, Smile, Heart, ThumbsUp, Flame, Laugh, AlertCircle } from 'lucide-react';
+import { Trash2, Smile } from 'lucide-react';
 
 const EMOJIS = ['👍', '❤️', '🔥', '😂', '😮', '😢'];
 
@@ -18,7 +18,7 @@ export default function MessageBubble({ message, roomId, onDeleteMock, onReactMo
     try {
       const date = ts.seconds ? new Date(ts.seconds * 1000) : new Date(ts);
       return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-    } catch (e) {
+    } catch {
       return '';
     }
   };

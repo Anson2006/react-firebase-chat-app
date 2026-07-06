@@ -9,8 +9,7 @@ import {
   addDoc, 
   serverTimestamp, 
   doc, 
-  setDoc,
-  deleteDoc
+  setDoc
 } from 'firebase/firestore';
 import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
 import { 
@@ -22,7 +21,6 @@ import {
   Search, 
   Lock, 
   Unlock, 
-  User, 
   MessageSquare, 
   Menu, 
   X, 

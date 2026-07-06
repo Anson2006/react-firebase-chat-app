@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { storage, db } from '../firebase';
+import { storage } from '../firebase';
 import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
-import { X, Upload, Check, User, Camera, Sparkles } from 'lucide-react';
+import { X, Check, User, Camera } from 'lucide-react';
 
 const PRESETS = [
   { name: 'Aurora', url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Aurora' },
