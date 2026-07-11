@@ -463,6 +463,14 @@ export default function Dashboard() {
   return (
     <div className="flex h-screen w-screen overflow-hidden bg-slate-950 text-slate-100">
       
+      {/* Sidebar backdrop overlay on mobile */}
+      {sidebarOpen && (
+        <div 
+          className="fixed inset-0 z-30 bg-slate-950/60 backdrop-blur-sm md:hidden"
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
+
       {/* Sidebar - responsive sliding panel */}
       <aside 
         className={`fixed inset-y-0 left-0 z-40 w-80 bg-slate-900 border-r border-slate-800/80 flex flex-col transition-transform duration-300 md:relative md:translate-x-0 ${

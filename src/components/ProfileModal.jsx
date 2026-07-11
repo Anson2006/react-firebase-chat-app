@@ -170,7 +170,7 @@ export default function ProfileModal({ isOpen, onClose }) {
             </p>
 
             {/* Presets Grid */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: '8px', width: '100%', marginTop: '8px' }}>
+            <div className="profile-presets-grid">
               {PRESETS.map((preset) => {
                 const isSelected = selectedPhoto === preset.url && !file;
                 return (

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { saveFirebaseConfig } from '../firebase';
+import { saveFirebaseConfig, clearFirebaseConfig } from '../firebase';
 import { Mail, Lock, User, LogIn, Database, Sparkles, Eye, EyeOff, CheckCircle } from 'lucide-react';
 
 const GoogleIcon = () => (
@@ -269,39 +269,56 @@ export default function Auth() {
           </button>
 
           {showConfigConsole && (
-            <form onSubmit={handleConfigSubmit} className="mt-4 space-y-3 animate-fade-in">
-              <p className="text-[11px] text-slate-400 leading-relaxed">
-                Paste your Web App Firebase Configuration object. You can grab this from the Firebase Console (Project Settings &gt; General &gt; Your Apps).
-              </p>
+            <div className="mt-4 space-y-4 animate-fade-in">
+              {firebaseActive && (
+                <div className="pb-3 border-b border-slate-800/60">
+                  <button
+                    type="button"
+                    onClick={clearFirebaseConfig}
+                    className="w-full flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl bg-red-500/5 border border-red-500/15 text-xs text-rose-400 hover:bg-red-500/10 transition-colors font-medium"
+                  >
+                    <Database size={14} />
+                    Disconnect Firebase (Use Demo Mode)
+                  </button>
+                </div>
+              )}
               
-              <textarea
-                placeholder={`const firebaseConfig = { \n  apiKey: "AIzaSy...", \n  authDomain: "chat-app.firebaseapp.com", \n  projectId: "chat-app", \n  storageBucket: "chat-app.appspot.com", \n  messagingSenderId: "123456", \n  appId: "1:123456:web:abcd" \n};`}
-                value={configInput}
-                onChange={(e) => setConfigInput(e.target.value)}
-                className="w-full glass-input h-28 text-[11px] font-mono leading-normal p-3 resize-none bg-black/20"
-                required
-              ></textarea>
+              <form onSubmit={handleConfigSubmit} className="space-y-3">
+                <p className="text-[11px] text-slate-400 leading-relaxed">
+                  {firebaseActive 
+                    ? 'Or modify your current Web App Firebase Configuration:' 
+                    : 'Paste your Web App Firebase Configuration object. You can grab this from the Firebase Console (Project Settings > General > Your Apps).'}
+                </p>
+                
+                <textarea
+                  placeholder={`const firebaseConfig = { \n  apiKey: "AIzaSy...", \n  authDomain: "chat-app.firebaseapp.com", \n  projectId: "chat-app", \n  storageBucket: "chat-app.appspot.com", \n  messagingSenderId: "123456", \n  appId: "1:123456:web:abcd" \n};`}
+                  value={configInput}
+                  onChange={(e) => setConfigInput(e.target.value)}
+                  className="w-full glass-input h-28 text-[11px] font-mono leading-normal p-3 resize-none bg-black/20"
+                  required
+                ></textarea>
 
-              {configError && (
-                <div className="bg-rose-500/10 text-rose-400 border border-rose-500/10 p-2 rounded-lg text-[11px]">
-                  {configError}
-                </div>
-              )}
+                {configError && (
+                  <div className="bg-rose-500/10 text-rose-400 border border-rose-500/10 p-2 rounded-lg text-[11px]">
+                    {configError}
+                  </div>
+                )}
 
-              {configSuccess && (
-                <div className="bg-emerald-500/10 text-emerald-400 border border-emerald-500/10 p-2 rounded-lg text-[11px] flex items-center gap-1.5">
-                  <CheckCircle size={14} />
-                  Connected! Reloading app...
-                </div>
-              )}
+                {configSuccess && (
+                  <div className="bg-emerald-500/10 text-emerald-400 border border-emerald-500/10 p-2 rounded-lg text-[11px] flex items-center gap-1.5">
+                    <CheckCircle size={14} />
+                    Connected! Reloading app...
+                  </div>
+                )}
 
-              <button
-                type="submit"
-                className="w-full btn-secondary py-2 text-xs font-semibold bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-300 border-indigo-500/20"
-              >
-                Save & Connect Realtime
-              </button>
-            </form>
+                <button
+                  type="submit"
+                  className="w-full btn-secondary py-2 text-xs font-semibold bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-300 border-indigo-500/20"
+                >
+                  Save & Connect Realtime
+                </button>
+              </form>
+            </div>
           )}
         </div>
       </div>

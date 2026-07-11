@@ -17,7 +17,11 @@ export const useAuth = () => useContext(AuthContext);
 export const AuthProvider = ({ children }) => {
   const [currentUser, setCurrentUser] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [firebaseActive, setFirebaseActive] = useState(isFirebaseConfigured);
+  const [firebaseActive, setFirebaseActive] = useState(() => {
+    const disabled = localStorage.getItem('firebase_disabled') === 'true';
+    if (disabled) return false;
+    return isFirebaseConfigured;
+  });
 
   // Fallback / Mock auth states if firebase is not active
   useEffect(() => {

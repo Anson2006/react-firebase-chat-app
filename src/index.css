@@ -353,7 +353,7 @@ aside header {
 .hover\:bg-slate-800\/40:hover {
   background: rgba(255, 255, 255, 0.02) !important;
   color: var(--text-primary) !important;
-  transform: translateX(3deg) scale(1.01) !important;
+  transform: translateX(3px) scale(1.01) !important;
   border-left: 2px solid rgba(255, 255, 255, 0.15) !important;
   padding-left: 14px !important;
 }
@@ -644,4 +644,163 @@ header.h-14 {
   padding: 10px 14px !important;
   border-radius: 12px !important;
 }
+
+/* Missing Layout, Position, and Sizing Utility Classes */
+.h-screen {
+  height: 100vh !important;
+}
+.w-screen {
+  width: 100vw !important;
+}
+.w-80 {
+  width: 320px !important;
+  min-width: 320px !important;
+  max-width: 320px !important;
+}
+.max-w-sm {
+  max-width: 384px !important;
+}
+.inset-0 {
+  top: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  left: 0 !important;
+}
+.fixed {
+  position: fixed !important;
+}
+.z-30 {
+  z-index: 30 !important;
+}
+.z-40 {
+  z-index: 40 !important;
+}
+.transition-transform {
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+.duration-300 {
+  transition-duration: 300ms !important;
+}
+.translate-x-0 {
+  transform: translateX(0) !important;
+}
+.-translate-x-full {
+  transform: translateX(-100%) !important;
+}
+.max-w-\[70\%\] {
+  max-width: 70% !important;
+}
+.border-r {
+  border-right-style: solid !important;
+  border-right-width: 1px !important;
+}
+.border-b {
+  border-bottom-style: solid !important;
+  border-bottom-width: 1px !important;
+}
+.border-t {
+  border-top-style: solid !important;
+  border-top-width: 1px !important;
+}
+.border-slate-800 {
+  border-color: rgba(255, 255, 255, 0.08) !important;
+}
+.border-slate-800\/80 {
+  border-color: rgba(255, 255, 255, 0.06) !important;
+}
+.bg-slate-950 {
+  background-color: var(--bg-primary) !important;
+}
+.bg-slate-900 {
+  background-color: var(--bg-secondary) !important;
+}
+.text-slate-100 {
+  color: #f1f5f9 !important;
+}
+.transition-all {
+  transition: var(--transition-smooth) !important;
+}
+.backdrop-blur-sm {
+  backdrop-filter: blur(4px) !important;
+  -webkit-backdrop-filter: blur(4px) !important;
+}
+.bg-slate-950\/60 {
+  background-color: rgba(5, 7, 12, 0.6) !important;
+}
+
+/* Responsive Media Queries */
+@media (min-width: 768px) {
+  .md\:relative {
+    position: relative !important;
+  }
+  .md\:translate-x-0 {
+    transform: translateX(0) !important;
+  }
+  .md\:hidden {
+    display: none !important;
+  }
+}
+
+@media (max-width: 767px) {
+  /* Give messages slightly more room on narrower mobile screens */
+  .max-w-\[70\%\] {
+    max-width: 85% !important;
+  }
+}
+
+/* Profile Presets Grid */
+.profile-presets-grid {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 8px;
+  width: 100%;
+  margin-top: 8px;
+}
+
+/* Extra responsive utilities */
+@media (min-width: 640px) {
+  .sm\:inline {
+    display: inline !important;
+  }
+}
+
+@media (max-width: 640px) {
+  .profile-presets-grid {
+    grid-template-columns: repeat(3, 1fr) !important;
+  }
+  
+  .modal-content {
+    padding: 1.5rem !important;
+  }
+}
+
+/* Opacity, Visibility, and Transition Utilities */
+.opacity-0 {
+  opacity: 0 !important;
+}
+.opacity-100 {
+  opacity: 1 !important;
+}
+.invisible {
+  visibility: hidden !important;
+}
+.visible {
+  visibility: visible !important;
+}
+.transition-opacity {
+  transition-property: opacity, visibility !important;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+.duration-200 {
+  transition-duration: 200ms !important;
+}
+
+/* Hover effects for quick actions (only on devices that support hover) */
+@media (hover: hover) {
+  .group\/bubble:hover .group-hover\/bubble\:opacity-100 {
+    opacity: 1 !important;
+    visibility: visible !important;
+  }
+}
+
 

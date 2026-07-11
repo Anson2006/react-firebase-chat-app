@@ -9,6 +9,7 @@ const EMOJIS = ['👍', '❤️', '🔥', '😂', '😮', '😢'];
 export default function MessageBubble({ message, roomId, onDeleteMock, onReactMock }) {
   const { currentUser, firebaseActive } = useAuth();
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+  const [showMobileActions, setShowMobileActions] = useState(false);
 
   const isMe = message.senderId === currentUser?.uid;
   const isSystem = message.isSystem;
@@ -106,7 +107,8 @@ export default function MessageBubble({ message, roomId, onDeleteMock, onReactMo
         {/* Message bubble core */}
         <div className="relative group/bubble">
           <div
-            className={`px-4 py-3 rounded-2xl border leading-relaxed break-words text-[14.5px] ${
+            onClick={() => setShowMobileActions(!showMobileActions)}
+            className={`px-4 py-3 rounded-2xl border leading-relaxed break-words text-[14.5px] cursor-pointer md:cursor-default ${
               isMe
                 ? 'bg-gradient-to-br from-indigo-600 to-purple-600 border-indigo-500/40 text-white rounded-tr-none'
                 : 'bg-slate-800/80 border-slate-700/40 text-slate-200 rounded-tl-none'
@@ -127,8 +129,12 @@ export default function MessageBubble({ message, roomId, onDeleteMock, onReactMo
 
           {/* Quick Actions (Reactions & Delete) */}
           <div
-            className={`absolute top-1/2 -translate-y-1/2 flex items-center gap-1 opacity-0 group-hover/bubble:opacity-100 transition-opacity duration-200 z-10 ${
+            className={`absolute top-1/2 -translate-y-1/2 flex items-center gap-1 transition-opacity duration-200 z-10 ${
               isMe ? 'right-full mr-2 flex-row-reverse' : 'left-full ml-2 flex-row'
+            } ${
+              showMobileActions
+                ? 'opacity-100 visible'
+                : 'opacity-0 invisible group-hover/bubble:opacity-100 group-hover/bubble:visible'
             }`}
           >
             {/* Reaction Trigger */}

@@ -52,6 +52,7 @@ if (config && config.apiKey && config.projectId) {
 export const saveFirebaseConfig = (configObj) => {
   try {
     localStorage.setItem('firebase_config', JSON.stringify(configObj));
+    localStorage.removeItem('firebase_disabled');
     return true;
   } catch (e) {
     console.error('Error saving firebase config:', e);
@@ -62,6 +63,7 @@ export const saveFirebaseConfig = (configObj) => {
 export const clearFirebaseConfig = () => {
   try {
     localStorage.removeItem('firebase_config');
+    localStorage.setItem('firebase_disabled', 'true');
     window.location.reload();
   } catch (e) {
     console.error('Error clearing firebase config:', e);
