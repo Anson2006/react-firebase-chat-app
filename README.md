@@ -1,5 +1,17 @@
-# React + Vite
+# AuraChat - React + Vite Chat App
 
+A premium real-time chat application built using React, Vite, and Google Firebase.
+
+## Live Demo
+Check out the live deployment here: [https://full-chat-hub.web.app](https://full-chat-hub.web.app) (or [https://full-chat-hub.firebaseapp.com](https://full-chat-hub.firebaseapp.com))
+
+## Features
+- **Realtime Chat Rooms**: Join rooms and chat in real-time.
+- **Google Authentication & Password Login**: Fully integrated Firebase Auth.
+- **Media Uploads**: Send images to chat rooms (stored via Firebase Storage).
+- **Offline Demo Mode**: Toggle between offline local sandbox mode and online Firebase backend.
+
+## Project Setup
 This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
 
 Currently, two official plugins are available:
