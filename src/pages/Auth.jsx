@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { saveFirebaseConfig, clearFirebaseConfig, enableFirebase, isFirebaseConfigured } from '../firebase';
+import { saveFirebaseConfig, clearFirebaseConfig, enableFirebase, isFirebaseConfigured, parseFirebaseConfigText, validateFirebaseConfig } from '../firebase';
 import { Mail, Lock, User, LogIn, Database, Sparkles, Eye, EyeOff, CheckCircle } from 'lucide-react';
 
 const GoogleIcon = () => (
@@ -26,9 +26,18 @@ export default function Auth() {
 
   // Firebase Config Setup state
   const [showConfigConsole, setShowConfigConsole] = useState(false);
+  const [configTab, setConfigTab] = useState('snippet'); // 'snippet' or 'manual'
   const [configInput, setConfigInput] = useState('');
   const [configError, setConfigError] = useState('');
   const [configSuccess, setConfigSuccess] = useState(false);
+
+  // Manual Firebase Config fields
+  const [apiKey, setApiKey] = useState('');
+  const [authDomain, setAuthDomain] = useState('');
+  const [projectId, setProjectId] = useState('');
+  const [storageBucket, setStorageBucket] = useState('');
+  const [messagingSenderId, setMessagingSenderId] = useState('');
+  const [appId, setAppId] = useState('');
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -78,40 +87,38 @@ export default function Auth() {
     setConfigError('');
     setConfigSuccess(false);
 
-    try {
-      // Find the JSON object inside the input
-      let cleanInput = configInput.trim();
-      
-      // If they paste the entire code block: const firebaseConfig = { ... }
-      if (cleanInput.includes('{')) {
-        const start = cleanInput.indexOf('{');
-        const end = cleanInput.lastIndexOf('}') + 1;
-        cleanInput = cleanInput.slice(start, end);
+    let parsedConfig = null;
+    if (configTab === 'snippet') {
+      parsedConfig = parseFirebaseConfigText(configInput);
+      if (!parsedConfig || !parsedConfig.apiKey || !parsedConfig.projectId) {
+        setConfigError('Failed to parse the configuration. Please ensure you have copied the Firebase configuration snippet correctly.');
+        return;
       }
+    } else {
+      parsedConfig = {
+        apiKey: apiKey.trim(),
+        authDomain: authDomain.trim(),
+        projectId: projectId.trim(),
+        storageBucket: storageBucket.trim(),
+        messagingSenderId: messagingSenderId.trim(),
+        appId: appId.trim()
+      };
+    }
 
-      // Convert Javascript-like object keys to valid JSON (quotes around keys) if needed
-      // A quick way is to evaluate it safely using Function, but to avoid security risks, 
-      // we'll attempt a safe JSON-like evaluation or a clean Regex parse.
-      // Since it's local config and input by the user on their own system, 
-      // we can parse it as a JS object safely:
-      const parsedConfig = new Function(`return ${cleanInput}`)();
+    const validation = validateFirebaseConfig(parsedConfig);
+    if (!validation.isValid) {
+      setConfigError(validation.error);
+      return;
+    }
 
-      if (!parsedConfig.apiKey || !parsedConfig.projectId) {
-        throw new Error('Config must contain at least apiKey and projectId.');
-      }
-
-      const success = saveFirebaseConfig(parsedConfig);
-      if (success) {
-        setConfigSuccess(true);
-        setTimeout(() => {
-          window.location.reload();
-        }, 1500);
-      } else {
-        throw new Error('Failed to write to local storage.');
-      }
-    } catch (err) {
-      console.error(err);
-      setConfigError('Invalid configuration object. Please paste a valid Firebase configuration block.');
+    const success = saveFirebaseConfig(parsedConfig);
+    if (success) {
+      setConfigSuccess(true);
+      setTimeout(() => {
+        window.location.reload();
+      }, 1500);
+    } else {
+      setConfigError('Failed to write configuration to local storage.');
     }
   };
 
@@ -139,6 +146,50 @@ export default function Auth() {
           </div>
           <h1 className="text-3xl font-bold tracking-tight text-white">AuraChat</h1>
           <p className="text-sm text-slate-400 mt-1">Connect instantly in elegant rooms</p>
+        </div>
+
+        {/* Mode Switcher */}
+        <div className="mb-6 p-0.5 rounded-xl bg-slate-950/60 border border-slate-800/80 flex">
+          <button
+            type="button"
+            onClick={() => {
+              if (!firebaseActive) {
+                // To activate Live Mode, we need a config
+                if (!isFirebaseConfigured) {
+                  setError('Please configure Firebase settings below before enabling Live Mode.');
+                  setShowConfigConsole(true);
+                  return;
+                }
+                enableFirebase();
+              }
+            }}
+            className={`flex-1 py-2 px-3 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition-all ${
+              firebaseActive
+                ? 'bg-gradient-to-tr from-indigo-500/20 to-purple-500/20 text-indigo-300 border border-indigo-500/20 shadow-sm font-bold'
+                : 'text-slate-500 hover:text-slate-400 border border-transparent'
+            }`}
+          >
+            <span className={`w-1.5 h-1.5 rounded-full ${firebaseActive ? 'bg-indigo-400 animate-pulse' : 'bg-slate-700'}`}></span>
+            Firebase Live
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              if (firebaseActive) {
+                // Switch to offline demo mode
+                localStorage.setItem('firebase_disabled', 'true');
+                window.location.reload();
+              }
+            }}
+            className={`flex-1 py-2 px-3 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition-all ${
+              !firebaseActive
+                ? 'bg-gradient-to-tr from-indigo-500/20 to-purple-500/20 text-indigo-300 border border-indigo-500/20 shadow-sm font-bold'
+                : 'text-slate-500 hover:text-slate-400 border border-transparent'
+            }`}
+          >
+            <span className={`w-1.5 h-1.5 rounded-full ${!firebaseActive ? 'bg-amber-400 animate-pulse' : 'bg-slate-700'}`}></span>
+            Local Demo
+          </button>
         </div>
 
         {/* Main Form */}
@@ -296,20 +347,118 @@ export default function Auth() {
                 </div>
               )}
               
-              <form onSubmit={handleConfigSubmit} className="space-y-3">
-                <p className="text-[11px] text-slate-400 leading-relaxed">
-                  {firebaseActive 
-                    ? 'Or modify your current Web App Firebase Configuration:' 
-                    : 'Paste your Web App Firebase Configuration object. You can grab this from the Firebase Console (Project Settings > General > Your Apps).'}
-                </p>
-                
-                <textarea
-                  placeholder={`const firebaseConfig = { \n  apiKey: "AIzaSy...", \n  authDomain: "chat-app.firebaseapp.com", \n  projectId: "chat-app", \n  storageBucket: "chat-app.appspot.com", \n  messagingSenderId: "123456", \n  appId: "1:123456:web:abcd" \n};`}
-                  value={configInput}
-                  onChange={(e) => setConfigInput(e.target.value)}
-                  className="w-full glass-input h-28 text-[11px] font-mono leading-normal p-3 resize-none bg-black/20"
-                  required
-                ></textarea>
+              <form onSubmit={handleConfigSubmit} className="space-y-4">
+                <div className="flex border-b border-slate-800/80 p-0.5 rounded-xl bg-slate-950/40">
+                  <button
+                    type="button"
+                    onClick={() => setConfigTab('snippet')}
+                    className={`flex-1 py-1.5 px-3 rounded-lg text-[11px] font-semibold transition-all ${
+                      configTab === 'snippet'
+                        ? 'bg-indigo-500/20 text-indigo-300 border border-indigo-500/30'
+                        : 'text-slate-500 hover:text-slate-300 border border-transparent'
+                    }`}
+                  >
+                    Paste Snippet
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setConfigTab('manual')}
+                    className={`flex-1 py-1.5 px-3 rounded-lg text-[11px] font-semibold transition-all ${
+                      configTab === 'manual'
+                        ? 'bg-indigo-500/20 text-indigo-300 border border-indigo-500/30'
+                        : 'text-slate-500 hover:text-slate-300 border border-transparent'
+                    }`}
+                  >
+                    Manual Fields
+                  </button>
+                </div>
+
+                {configTab === 'snippet' ? (
+                  <div className="space-y-2">
+                    <p className="text-[11px] text-slate-400 leading-relaxed">
+                      {firebaseActive 
+                        ? 'Or modify your current Web App Firebase Configuration:' 
+                        : 'Paste your Web App Firebase Configuration object. You can grab this from the Firebase Console (Project Settings > General > Your Apps).'}
+                    </p>
+                    <textarea
+                      placeholder={`const firebaseConfig = { \n  apiKey: "AIzaSy...", \n  authDomain: "chat-app.firebaseapp.com", \n  projectId: "chat-app", \n  storageBucket: "chat-app.appspot.com", \n  messagingSenderId: "123456", \n  appId: "1:123456:web:abcd" \n};`}
+                      value={configInput}
+                      onChange={(e) => setConfigInput(e.target.value)}
+                      className="w-full glass-input h-28 text-[11px] font-mono leading-normal p-3 resize-none bg-black/20"
+                      required={configTab === 'snippet'}
+                    ></textarea>
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    <p className="text-[11px] text-slate-400 leading-relaxed">
+                      Enter the credentials of your Firebase project manually below:
+                    </p>
+                    <div className="grid grid-cols-2 gap-2 text-left">
+                      <div className="flex flex-col gap-1 col-span-2">
+                        <label className="text-[10px] font-semibold text-slate-400">API Key *</label>
+                        <input
+                          type="text"
+                          placeholder="AIzaSy..."
+                          value={apiKey}
+                          onChange={(e) => setApiKey(e.target.value)}
+                          className="w-full glass-input py-1.5 px-2.5 text-xs font-mono"
+                          required={configTab === 'manual'}
+                        />
+                      </div>
+                      <div className="flex flex-col gap-1">
+                        <label className="text-[10px] font-semibold text-slate-400">Project ID *</label>
+                        <input
+                          type="text"
+                          placeholder="my-chat-app"
+                          value={projectId}
+                          onChange={(e) => setProjectId(e.target.value)}
+                          className="w-full glass-input py-1.5 px-2.5 text-xs font-mono"
+                          required={configTab === 'manual'}
+                        />
+                      </div>
+                      <div className="flex flex-col gap-1">
+                        <label className="text-[10px] font-semibold text-slate-400">Auth Domain</label>
+                        <input
+                          type="text"
+                          placeholder="my-chat-app.firebaseapp.com"
+                          value={authDomain}
+                          onChange={(e) => setAuthDomain(e.target.value)}
+                          className="w-full glass-input py-1.5 px-2.5 text-xs font-mono"
+                        />
+                      </div>
+                      <div className="flex flex-col gap-1">
+                        <label className="text-[10px] font-semibold text-slate-400">Storage Bucket</label>
+                        <input
+                          type="text"
+                          placeholder="my-chat-app.appspot.com"
+                          value={storageBucket}
+                          onChange={(e) => setStorageBucket(e.target.value)}
+                          className="w-full glass-input py-1.5 px-2.5 text-xs font-mono"
+                        />
+                      </div>
+                      <div className="flex flex-col gap-1">
+                        <label className="text-[10px] font-semibold text-slate-400">App ID</label>
+                        <input
+                          type="text"
+                          placeholder="1:12345:web:abcd"
+                          value={appId}
+                          onChange={(e) => setAppId(e.target.value)}
+                          className="w-full glass-input py-1.5 px-2.5 text-xs font-mono"
+                        />
+                      </div>
+                      <div className="flex flex-col gap-1 col-span-2">
+                        <label className="text-[10px] font-semibold text-slate-400">Messaging Sender ID</label>
+                        <input
+                          type="text"
+                          placeholder="930022449781"
+                          value={messagingSenderId}
+                          onChange={(e) => setMessagingSenderId(e.target.value)}
+                          className="w-full glass-input py-1.5 px-2.5 text-xs font-mono"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                )}
 
                 {configError && (
                   <div className="bg-rose-500/10 text-rose-400 border border-rose-500/10 p-2 rounded-lg text-[11px]">

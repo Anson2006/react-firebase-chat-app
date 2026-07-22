@@ -10,6 +10,85 @@ let storage = null;
 let googleProvider = null;
 let isFirebaseConfigured = false;
 
+export const parseFirebaseConfigText = (text) => {
+  if (!text) return null;
+  const cleanInput = text.trim();
+  
+  const extractValue = (key) => {
+    // Matches key: "value", "key": 'value', key = `value`, etc.
+    const regex = new RegExp(`(?:["'\`]?${key}["'\`]?)\\s*[:=]\\s*["'\`]([^"'\`]+)["'\`]`);
+    const match = cleanInput.match(regex);
+    return match ? match[1].trim() : null;
+  };
+
+  const config = {
+    apiKey: extractValue('apiKey'),
+    authDomain: extractValue('authDomain'),
+    projectId: extractValue('projectId'),
+    storageBucket: extractValue('storageBucket'),
+    messagingSenderId: extractValue('messagingSenderId'),
+    appId: extractValue('appId')
+  };
+
+  // If the parsing fails to find the fields, check if the input is raw JSON
+  if (!config.apiKey || !config.projectId) {
+    try {
+      // Find JSON block
+      let jsonStr = cleanInput;
+      if (jsonStr.includes('{')) {
+        const start = jsonStr.indexOf('{');
+        const end = jsonStr.lastIndexOf('}') + 1;
+        jsonStr = jsonStr.slice(start, end);
+      }
+      const parsed = JSON.parse(jsonStr);
+      if (parsed.apiKey) config.apiKey = parsed.apiKey;
+      if (parsed.authDomain) config.authDomain = parsed.authDomain;
+      if (parsed.projectId) config.projectId = parsed.projectId;
+      if (parsed.storageBucket) config.storageBucket = parsed.storageBucket;
+      if (parsed.messagingSenderId) config.messagingSenderId = parsed.messagingSenderId;
+      if (parsed.appId) config.appId = parsed.appId;
+    } catch {
+      // Ignore JSON parse errors, fall back to regex matches
+    }
+  }
+
+  return config;
+};
+
+export const validateFirebaseConfig = (config) => {
+  if (!config) return { isValid: false, error: 'Configuration is empty.' };
+  
+  const required = ['apiKey', 'projectId'];
+  for (const key of required) {
+    if (!config[key] || config[key].trim() === '') {
+      return { isValid: false, error: `Missing required field: ${key}` };
+    }
+  }
+
+  const isPlaceholder = (val) => {
+    if (!val) return false;
+    const v = val.toLowerCase().trim();
+    return (
+      v === 'your_api_key' ||
+      v === 'your_project_id' ||
+      v === 'your_auth_domain' ||
+      v === 'your_storage_bucket' ||
+      v === 'your_messaging_sender_id' ||
+      v === 'your_app_id' ||
+      v.includes('yourkeyhere') ||
+      v.includes('placeholder')
+    );
+  };
+
+  for (const key in config) {
+    if (isPlaceholder(config[key])) {
+      return { isValid: false, error: `Field "${key}" contains a placeholder value. Please configure your actual Firebase credentials.` };
+    }
+  }
+
+  return { isValid: true };
+};
+
 const loadFirebaseConfig = () => {
   try {
     const savedConfig = localStorage.getItem('firebase_config');
@@ -35,8 +114,9 @@ const loadFirebaseConfig = () => {
 };
 
 const config = loadFirebaseConfig();
+const validation = validateFirebaseConfig(config);
 
-if (config && config.apiKey && config.projectId) {
+if (config && validation.isValid) {
   try {
     app = getApps().length === 0 ? initializeApp(config) : getApp();
     auth = getAuth(app);

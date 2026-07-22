@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { db, storage, clearFirebaseConfig, enableFirebase, isFirebaseConfigured } from '../firebase';
+import { db, storage, clearFirebaseConfig, enableFirebase, isFirebaseConfigured, parseFirebaseConfigText, validateFirebaseConfig, saveFirebaseConfig } from '../firebase';
 import { 
   collection, 
   query, 
@@ -26,7 +26,8 @@ import {
   X, 
   Database,
   Sparkles,
-  Users
+  Users,
+  CheckCircle
 } from 'lucide-react';
 import RoomModal from '../components/RoomModal';
 import ProfileModal from '../components/ProfileModal';
@@ -56,6 +57,21 @@ export default function Dashboard() {
   // Modals state
   const [isRoomModalOpen, setIsRoomModalOpen] = useState(false);
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
+  const [isFirebaseModalOpen, setIsFirebaseModalOpen] = useState(false);
+
+  // Firebase Config Setup state
+  const [configTab, setConfigTab] = useState('snippet'); // 'snippet' or 'manual'
+  const [configInput, setConfigInput] = useState('');
+  const [configError, setConfigError] = useState('');
+  const [configSuccess, setConfigSuccess] = useState(false);
+
+  // Manual Firebase Config fields
+  const [apiKey, setApiKey] = useState('');
+  const [authDomain, setAuthDomain] = useState('');
+  const [projectId, setProjectId] = useState('');
+  const [storageBucket, setStorageBucket] = useState('');
+  const [messagingSenderId, setMessagingSenderId] = useState('');
+  const [appId, setAppId] = useState('');
 
   // Password room lock state
   const [roomPasswordInput, setRoomPasswordInput] = useState('');
@@ -236,6 +252,46 @@ export default function Dashboard() {
       setRoomPasswordInput('');
     } else {
       setPasswordError('Invalid password. Please try again.');
+    }
+  };
+
+  const handleConfigSubmit = (e) => {
+    e.preventDefault();
+    setConfigError('');
+    setConfigSuccess(false);
+
+    let parsedConfig = null;
+    if (configTab === 'snippet') {
+      parsedConfig = parseFirebaseConfigText(configInput);
+      if (!parsedConfig || !parsedConfig.apiKey || !parsedConfig.projectId) {
+        setConfigError('Failed to parse the configuration. Please ensure you have copied the Firebase configuration snippet correctly.');
+        return;
+      }
+    } else {
+      parsedConfig = {
+        apiKey: apiKey.trim(),
+        authDomain: authDomain.trim(),
+        projectId: projectId.trim(),
+        storageBucket: storageBucket.trim(),
+        messagingSenderId: messagingSenderId.trim(),
+        appId: appId.trim()
+      };
+    }
+
+    const validation = validateFirebaseConfig(parsedConfig);
+    if (!validation.isValid) {
+      setConfigError(validation.error);
+      return;
+    }
+
+    const success = saveFirebaseConfig(parsedConfig);
+    if (success) {
+      setConfigSuccess(true);
+      setTimeout(() => {
+        window.location.reload();
+      }, 1500);
+    } else {
+      setConfigError('Failed to write configuration to local storage.');
     }
   };
 
@@ -627,28 +683,45 @@ export default function Dashboard() {
           </div>
         )}
 
-        {/* Database Connection widget for offline users */}
-        {firebaseActive ? (
-          <div className="p-3 border-t border-slate-800/50 bg-slate-950/20 text-center">
-            <button 
-              onClick={clearFirebaseConfig}
-              className="text-[10px] text-slate-500 hover:text-slate-300 underline flex items-center justify-center gap-1 w-full"
-            >
-              <Database size={10} />
-              Disconnect Firebase Server
-            </button>
-          </div>
-        ) : isFirebaseConfigured ? (
-          <div className="p-3 border-t border-slate-800/50 bg-indigo-950/10 text-center">
-            <button 
-              onClick={enableFirebase}
-              className="text-[10px] text-indigo-400 hover:text-indigo-300 underline flex items-center justify-center gap-1 w-full font-medium"
-            >
-              <Database size={10} />
-              Reconnect to Firebase Server
-            </button>
-          </div>
-        ) : null}
+        {/* Database Connection widget */}
+        <div className="p-3 border-t border-slate-800/50 bg-slate-950/20 text-center">
+          {firebaseActive ? (
+            <div className="flex flex-col gap-1.5">
+              <button 
+                onClick={() => setIsFirebaseModalOpen(true)}
+                className="text-[10px] text-indigo-400 hover:text-indigo-300 underline flex items-center justify-center gap-1 w-full font-medium"
+              >
+                <Database size={10} />
+                Modify Firebase Database Config
+              </button>
+              <button 
+                onClick={clearFirebaseConfig}
+                className="text-[10px] text-slate-500 hover:text-rose-400 hover:underline flex items-center justify-center gap-1 w-full"
+              >
+                Disconnect Firebase Server
+              </button>
+            </div>
+          ) : (
+            <div className="flex flex-col gap-1.5">
+              {isFirebaseConfigured && (
+                <button 
+                  onClick={enableFirebase}
+                  className="text-[10px] text-indigo-400 hover:text-indigo-300 hover:underline flex items-center justify-center gap-1 w-full font-semibold bg-indigo-500/10 py-1 rounded-md mb-0.5"
+                >
+                  <Database size={10} />
+                  Reconnect to Firebase Server
+                </button>
+              )}
+              <button 
+                onClick={() => setIsFirebaseModalOpen(true)}
+                className="text-[10px] text-slate-400 hover:text-slate-200 hover:underline flex items-center justify-center gap-1 w-full"
+              >
+                <Database size={10} />
+                Connect Firebase Realtime
+              </button>
+            </div>
+          )}
+        </div>
       </aside>
 
       {/* Main chat window container */}
@@ -873,6 +946,166 @@ export default function Dashboard() {
         isOpen={isProfileModalOpen}
         onClose={() => setIsProfileModalOpen(false)}
       />
+
+      {/* Firebase Configuration Modal */}
+      {isFirebaseModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
+          <div className="w-full max-w-md glass-panel p-6 relative animate-scale-up shadow-glow-indigo border border-slate-800">
+            <button
+              onClick={() => {
+                setIsFirebaseModalOpen(false);
+                setConfigError('');
+                setConfigSuccess(false);
+              }}
+              className="absolute top-4 right-4 text-slate-400 hover:text-white transition-colors"
+            >
+              <X size={18} />
+            </button>
+
+            <div className="flex items-center gap-2 mb-4">
+              <div className="w-8 h-8 rounded-lg bg-indigo-500/20 text-indigo-400 flex items-center justify-center">
+                <Database size={16} />
+              </div>
+              <div>
+                <h3 className="font-bold text-base text-white">Firebase Connection Setup</h3>
+                <p className="text-[10px] text-slate-400">Connect AuraChat to your Firestore and Firebase Auth server</p>
+              </div>
+            </div>
+
+            <form onSubmit={handleConfigSubmit} className="space-y-4">
+              <div className="flex border-b border-slate-800/80 p-0.5 rounded-xl bg-slate-950/40">
+                <button
+                  type="button"
+                  onClick={() => setConfigTab('snippet')}
+                  className={`flex-1 py-1.5 px-3 rounded-lg text-[11px] font-semibold transition-all ${
+                    configTab === 'snippet'
+                      ? 'bg-indigo-500/20 text-indigo-300 border border-indigo-500/30'
+                      : 'text-slate-500 hover:text-slate-300 border border-transparent'
+                  }`}
+                >
+                  Paste Snippet
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setConfigTab('manual')}
+                  className={`flex-1 py-1.5 px-3 rounded-lg text-[11px] font-semibold transition-all ${
+                    configTab === 'manual'
+                      ? 'bg-indigo-500/20 text-indigo-300 border border-indigo-500/30'
+                      : 'text-slate-500 hover:text-slate-300 border border-transparent'
+                  }`}
+                >
+                  Manual Fields
+                </button>
+              </div>
+
+              {configTab === 'snippet' ? (
+                <div className="space-y-2">
+                  <p className="text-[11px] text-slate-400 leading-relaxed">
+                    Paste your Web App Firebase Configuration object. You can grab this from the Firebase Console (Project Settings &gt; General &gt; Your Apps).
+                  </p>
+                  <textarea
+                    placeholder={`const firebaseConfig = { \n  apiKey: "AIzaSy...", \n  authDomain: "chat-app.firebaseapp.com", \n  projectId: "chat-app", \n  storageBucket: "chat-app.appspot.com", \n  messagingSenderId: "123456", \n  appId: "1:123456:web:abcd" \n};`}
+                    value={configInput}
+                    onChange={(e) => setConfigInput(e.target.value)}
+                    className="w-full glass-input h-28 text-[11px] font-mono leading-normal p-3 resize-none bg-black/20"
+                    required={configTab === 'snippet'}
+                  ></textarea>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  <p className="text-[11px] text-slate-400 leading-relaxed">
+                    Enter the credentials of your Firebase project manually below:
+                  </p>
+                  <div className="grid grid-cols-2 gap-2 text-left">
+                    <div className="flex flex-col gap-1 col-span-2">
+                      <label className="text-[10px] font-semibold text-slate-400">API Key *</label>
+                      <input
+                        type="text"
+                        placeholder="AIzaSy..."
+                        value={apiKey}
+                        onChange={(e) => setApiKey(e.target.value)}
+                        className="w-full glass-input py-1.5 px-2.5 text-xs font-mono"
+                        required={configTab === 'manual'}
+                      />
+                    </div>
+                    <div className="flex flex-col gap-1">
+                      <label className="text-[10px] font-semibold text-slate-400">Project ID *</label>
+                      <input
+                        type="text"
+                        placeholder="my-chat-app"
+                        value={projectId}
+                        onChange={(e) => setProjectId(e.target.value)}
+                        className="w-full glass-input py-1.5 px-2.5 text-xs font-mono"
+                        required={configTab === 'manual'}
+                      />
+                    </div>
+                    <div className="flex flex-col gap-1">
+                      <label className="text-[10px] font-semibold text-slate-400">Auth Domain</label>
+                      <input
+                        type="text"
+                        placeholder="my-chat-app.firebaseapp.com"
+                        value={authDomain}
+                        onChange={(e) => setAuthDomain(e.target.value)}
+                        className="w-full glass-input py-1.5 px-2.5 text-xs font-mono"
+                      />
+                    </div>
+                    <div className="flex flex-col gap-1">
+                      <label className="text-[10px] font-semibold text-slate-400">Storage Bucket</label>
+                      <input
+                        type="text"
+                        placeholder="my-chat-app.appspot.com"
+                        value={storageBucket}
+                        onChange={(e) => setStorageBucket(e.target.value)}
+                        className="w-full glass-input py-1.5 px-2.5 text-xs font-mono"
+                      />
+                    </div>
+                    <div className="flex flex-col gap-1">
+                      <label className="text-[10px] font-semibold text-slate-400">App ID</label>
+                      <input
+                        type="text"
+                        placeholder="1:12345:web:abcd"
+                        value={appId}
+                        onChange={(e) => setAppId(e.target.value)}
+                        className="w-full glass-input py-1.5 px-2.5 text-xs font-mono"
+                      />
+                    </div>
+                    <div className="flex flex-col gap-1 col-span-2">
+                      <label className="text-[10px] font-semibold text-slate-400">Messaging Sender ID</label>
+                      <input
+                        type="text"
+                        placeholder="930022449781"
+                        value={messagingSenderId}
+                        onChange={(e) => setMessagingSenderId(e.target.value)}
+                        className="w-full glass-input py-1.5 px-2.5 text-xs font-mono"
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {configError && (
+                <div className="bg-rose-500/10 text-rose-400 border border-rose-500/10 p-2 rounded-lg text-[11px]">
+                  {configError}
+                </div>
+              )}
+
+              {configSuccess && (
+                <div className="bg-emerald-500/10 text-emerald-400 border border-emerald-500/10 p-2 rounded-lg text-[11px] flex items-center gap-1.5">
+                  <CheckCircle size={14} className="text-emerald-400" />
+                  Connected! Reloading app...
+                </div>
+              )}
+
+              <button
+                type="submit"
+                className="w-full btn-secondary py-2 text-xs font-semibold bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-300 border-indigo-500/20"
+              >
+                Save & Connect Realtime
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
 
     </div>
   );
