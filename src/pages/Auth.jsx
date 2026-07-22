@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { saveFirebaseConfig, clearFirebaseConfig } from '../firebase';
+import { saveFirebaseConfig, clearFirebaseConfig, enableFirebase, isFirebaseConfigured } from '../firebase';
 import { Mail, Lock, User, LogIn, Database, Sparkles, Eye, EyeOff, CheckCircle } from 'lucide-react';
 
 const GoogleIcon = () => (
@@ -279,6 +279,19 @@ export default function Auth() {
                   >
                     <Database size={14} />
                     Disconnect Firebase (Use Demo Mode)
+                  </button>
+                </div>
+              )}
+              
+              {!firebaseActive && isFirebaseConfigured && (
+                <div className="pb-3 border-b border-slate-800/60">
+                  <button
+                    type="button"
+                    onClick={enableFirebase}
+                    className="w-full flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl bg-indigo-500/10 border border-indigo-500/20 text-xs text-indigo-300 hover:bg-indigo-500/20 transition-colors font-medium"
+                  >
+                    <Database size={14} />
+                    Enable Firebase Server (Use Config/Env)
                   </button>
                 </div>
               )}

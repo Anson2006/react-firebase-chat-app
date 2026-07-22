@@ -70,4 +70,13 @@ export const clearFirebaseConfig = () => {
   }
 };
 
-export { app, auth, db, storage, googleProvider, isFirebaseConfigured };
+const enableFirebase = () => {
+  try {
+    localStorage.removeItem('firebase_disabled');
+    window.location.reload();
+  } catch (e) {
+    console.error('Error enabling firebase:', e);
+  }
+};
+
+export { app, auth, db, storage, googleProvider, isFirebaseConfigured, enableFirebase };

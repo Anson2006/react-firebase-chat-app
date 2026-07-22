@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { db, storage, clearFirebaseConfig } from '../firebase';
+import { db, storage, clearFirebaseConfig, enableFirebase, isFirebaseConfigured } from '../firebase';
 import { 
   collection, 
   query, 
@@ -628,7 +628,7 @@ export default function Dashboard() {
         )}
 
         {/* Database Connection widget for offline users */}
-        {firebaseActive && (
+        {firebaseActive ? (
           <div className="p-3 border-t border-slate-800/50 bg-slate-950/20 text-center">
             <button 
               onClick={clearFirebaseConfig}
@@ -638,7 +638,17 @@ export default function Dashboard() {
               Disconnect Firebase Server
             </button>
           </div>
-        )}
+        ) : isFirebaseConfigured ? (
+          <div className="p-3 border-t border-slate-800/50 bg-indigo-950/10 text-center">
+            <button 
+              onClick={enableFirebase}
+              className="text-[10px] text-indigo-400 hover:text-indigo-300 underline flex items-center justify-center gap-1 w-full font-medium"
+            >
+              <Database size={10} />
+              Reconnect to Firebase Server
+            </button>
+          </div>
+        ) : null}
       </aside>
 
       {/* Main chat window container */}
